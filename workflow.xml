@@ -1,0 +1,48 @@
+<workflow-app name="My_Workflow" xmlns="uri:oozie:workflow:0.5">
+    <start to="shell-a0b8"/>
+    <kill name="Kill">
+        <message>Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <action name="shell-a0b8">
+        <shell xmlns="uri:oozie:shell-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <exec>/user/cloudera/covid_project/scripts/copy_from_landing.sh</exec>
+            <file>/user/cloudera/covid_project/scripts/copy_from_landing.sh#copy_from_landing.sh</file>
+              <capture-output/>
+        </shell>
+        <ok to="hive2-4771"/>
+        <error to="Kill"/>
+    </action>
+    <action name="hive2-4771">
+        <hive2 xmlns="uri:oozie:hive2-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jdbc-url>jdbc:hive2://quickstart.cloudera:10000/default</jdbc-url>
+            <script>/user/cloudera/covid_project/scripts/create_pointer.hql</script>
+        </hive2>
+        <ok to="hive2-408d"/>
+        <error to="Kill"/>
+    </action>
+    <action name="hive2-408d">
+        <hive2 xmlns="uri:oozie:hive2-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jdbc-url>jdbc:hive2://quickstart.cloudera:10000/default</jdbc-url>
+            <script>/user/cloudera/covid_project/scripts/create_orc.hql</script>
+        </hive2>
+        <ok to="hive2-bfdc"/>
+        <error to="Kill"/>
+    </action>
+    <action name="hive2-bfdc">
+        <hive2 xmlns="uri:oozie:hive2-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jdbc-url>jdbc:hive2://quickstart.cloudera:10000/default</jdbc-url>
+            <script>/user/cloudera/covid_project/scripts/create_final.hql</script>
+        </hive2>
+        <ok to="End"/>
+        <error to="Kill"/>
+    </action>
+    <end name="End"/>
+</workflow-app>
